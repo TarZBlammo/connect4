@@ -456,7 +456,7 @@ int best_move(int board[][BOARD_SIZE_VERT], int computer_num)
         }
 */
 	bannedColumn(lastBoard, board, bannedColumns, computer_num, opponent_num);
-	columntoMoveto = runMinimax(lastBoard, board, 3, computer_num, bannedColumns);	
+	columntoMoveto = runMinimax(lastBoard, board, 1, computer_num, bannedColumns);	
 	if (columntoMoveto == -10)
 	{
 		while (is_column_full(lastBoard, doMove))
@@ -508,7 +508,7 @@ int heuristic(int board[][BOARD_SIZE_VERT], int player_num) {
             		if(board[j][i] == player_num && board[j][i-1] == player_num && board[j][i-2] == player_num && board[j][i-3] == player_num)
                 		result++;
             		if(board[j][i] == opponent_num && board[j][i-1] == opponent_num && board[j][i-2] == opponent_num && board[j][i-3] == opponent_num)
-                		result = result - 20;
+                		result--;
         	}
 
 
@@ -531,7 +531,7 @@ int heuristic(int board[][BOARD_SIZE_VERT], int player_num) {
                         if(board[j][i] == opponent_num && board[j-1][i-1] == opponent_num && board[j-2][i-2] == opponent_num && board[j-3][i-3] == opponent_num)
                                 result--;
                 } 
-
+	printf("Value Returned: %d\n", result); 
     return result;
 }
 
@@ -557,10 +557,13 @@ int minimax(int board[][BOARD_SIZE_VERT], int origBoard[][BOARD_SIZE_VERT], int 
 	{   
             	update_board(board, col+1, player_num);
             	n = minimax(board, origBoard, depth-1, 3 - player_num, col, bannedColumns);
-		if (depth == 7)
-		printf("Score for column %d: %d\n", col+1, n);
+		if (depth == 1)
+		{
+			printf("Depth: %d \n", depth);
+			printf("Score for column %d: %d\n", col+1, n);
+		}
 		if ( -n > best ) best = -n;
-		if (depth == 7){
+		if (depth == 1){
 		printf("Best value %d \n", best);
 		printf("-----------------------\n");}
 		for (int j = 0; j < BOARD_SIZE_VERT; j++)
