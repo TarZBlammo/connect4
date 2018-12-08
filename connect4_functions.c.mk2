@@ -1,0 +1,706 @@
+/******************************************************************************
+*
+* File name: connect4_functions.c
+*
+* Author:  John Jane Doe
+*          012345678
+*          jjdoe@ucsd.edu
+*
+*
+*     Lab #: 4
+* Problem #: 1
+*
+******************************************************************************/
+
+
+/*-----------------------------------------------------------------------------
+   Include files
+-----------------------------------------------------------------------------*/
+#include "connect4_functions.h"
+#include <time.h>
+// If you would like to use standard library functions other than those
+// declared in <stdio.h>, <stdlib.h>, <time.h>, <stdbool.h> (for which
+// the #include directives are already given in connect4_functions.h), 
+// you may #include the corresponding header files here.
+
+
+
+/*=============================================================================
+  Constants and definitions
+=============================================================================*/
+
+// If you would like to define constants other than BOARD_SIZE_HORIZ and 
+// BOARD_SIZE_VERT, or if you would like to define new types, you may put 
+// the corresponding #defines and typedefs here.
+
+
+
+/*=============================================================================
+  Global variables
+=============================================================================*/
+
+// If you would like to use global variables, declare them here.
+
+
+
+/*=============================================================================
+  Forward function declarations
+=============================================================================*/
+
+// If you would like to use functions other than those already declared in
+// connect4_functions.h, put the forward declarations of these functions here.
+
+int chooseColumn(int lastBoard[][BOARD_SIZE_VERT], int actualBoard[][BOARD_SIZE_VERT], int player_num, int opponent_num);
+
+
+/*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+                Function Definitions of Required Functions
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+
+
+/******************************************************************************
+*                                                                             *
+*                       Function print_welcome()                              *
+*                                                                             *
+******************************************************************************/
+int print_welcome(void)
+{
+	int numInput;
+	char option;
+	printf("*** Welcome to the Connect Four game!!! ***\n");
+	printf("Would you like to make the first move [y/n]: \n");
+	scanf("%c", &option);
+	if (option == 'n' || option == 'N')
+	{
+		while (((numInput = getchar()) != '\n') && ((numInput = getchar()) != EOF));
+		return 2;
+	}
+	else
+	{
+		while (((numInput = getchar()) != '\n') && ((numInput = getchar()) != EOF));
+		return 1;
+	}
+}
+
+/******************************************************************************
+*                                                                             *
+*                      Function display_board()                               *
+*                                                                             *
+******************************************************************************/
+void display_board(int board[][BOARD_SIZE_VERT])
+{
+	printf("\n");
+	for (int i = 0; i < BOARD_SIZE_VERT; i++)
+	{
+		printf("+---+---+---+---+---+---+---+\n");
+		printf("|");
+		for (int j = 0; j < BOARD_SIZE_HORIZ; j++)
+		{
+			if (board[j][i] == 1)
+				printf(" X |");
+			else if (board[j][i] == 2)
+				printf(" O |");
+			else
+				printf("   |");
+		}
+		printf("\n");
+	}
+	printf("+---+---+---+---+---+---+---+\n");
+	for (int k = 1; k <= BOARD_SIZE_HORIZ; k++)
+		printf("  %d ", k);
+	printf(" \n\n");
+}
+
+/******************************************************************************
+*                                                                             *
+*                      Function random_move()                                 *
+*                                                                             *
+******************************************************************************/
+int random_move(int board[][BOARD_SIZE_VERT], int computer_num)
+{
+	int randomCol = rand() % BOARD_SIZE_HORIZ + 1;
+	while(is_column_full(board, randomCol))
+		randomCol = (rand() % BOARD_SIZE_HORIZ) + 1;
+        update_board(board, randomCol, computer_num);
+	return randomCol;
+}
+
+/******************************************************************************
+*                                                                             *
+*                      Function player_move()                                 *
+*                                                                             *
+******************************************************************************/
+int player_move(int board[][BOARD_SIZE_VERT], int player_num)
+{
+	int numInput, tester;
+	while (1)
+	{	
+		printf("Please enter your move: ");
+		tester = scanf("%d", &numInput);
+		if ((numInput < 1 || numInput > BOARD_SIZE_HORIZ) || tester != 1)
+        	{
+        	        printf("Not a valid move. Enter a column number!\n");
+			while (getchar() != '\n');
+        	}
+		else
+		{
+			if(!is_column_full(board, numInput) && tester == 1)
+			{
+                		update_board(board, numInput, player_num);
+				while (getchar() != '\n');
+				break;
+			}
+			else
+			{
+				printf("This column is full. Try again!\n");
+				while (getchar() != '\n');
+			}
+		}
+	}
+	return numInput;
+}
+
+/******************************************************************************
+*                                                                             *
+*                      Function check_win_or_tie()                            *
+*                                                                             *
+******************************************************************************/
+bool check_win_or_tie(int board[][BOARD_SIZE_VERT], int last_move)
+{
+	//printf("The last move passed: %d", last_move);
+	int result = check_winner(board, last_move);
+	if (result == 1)
+	{
+		printf("*****************************\n");
+		printf("* Player X won!!! Game over *\n");
+		printf("*****************************\n");
+		return true;
+	}
+	else if (result == 2)
+	{
+		printf("*****************************\n");
+		printf("* Player O won!!! Game over *\n");
+		printf("*****************************\n");
+                return true;
+	}
+	else
+	{
+		for (int i = 0; i < BOARD_SIZE_HORIZ; i++)
+			for (int j = 0; j < BOARD_SIZE_VERT; j++)
+				if (board[i][j] == 0)
+					return false;
+		printf("*****************************\n");
+		printf("* Game is a tie!! No winner *\n");
+		printf("*****************************\n");
+		return true;
+	}
+}
+
+/******************************************************************************
+*                                                                             *
+*                     Function is_column_full()                               *
+*                                                                             *
+******************************************************************************/
+bool is_column_full(int board[][BOARD_SIZE_VERT], int m)
+{
+	int counter = 0;
+	for (int i = 0; i < BOARD_SIZE_VERT; i++)
+	{
+		if (board[m-1][i] != 0)
+			counter++;
+		else
+			break;
+	}
+	if (counter != BOARD_SIZE_VERT)
+		return false;
+	else
+		return true;
+}
+
+/******************************************************************************
+*                                                                             *
+*                      Function update_board()                                *
+*                                                                             *
+******************************************************************************/
+void update_board(int board[][BOARD_SIZE_VERT], int m, int player_num)
+{
+	for (int i = BOARD_SIZE_VERT - 1; i > -1; i--)
+	{
+		if (board[m-1][i] == 0)
+		{
+			board[m-1][i] = player_num;
+			break;
+		}
+	}
+
+}
+
+/******************************************************************************
+*                                                                             *
+*                      Function check_winner()                                *
+*                                                                             *
+******************************************************************************/
+int check_winner(int board[][BOARD_SIZE_VERT], int last_move)
+{
+	int counter = 0, positioninCol = 0, playerNum, indexisValid = 1, posColDia, posRowDia;
+	last_move--;
+	for (int i = 0; i < BOARD_SIZE_VERT; i++)
+	{
+		if (board[last_move][i] != 0)
+                {
+			//printf("The last move made: %d\n", last_move);
+			//printf("This is the value of player: %d\n", board[last_move][i]);
+			playerNum = board[last_move][i];
+                        positioninCol = i;
+			//printf("Position in array: %d\n", positioninCol);
+			break;                      
+                }
+        }
+	
+	//Horizontal matching block
+	for (int j = last_move; j >= 0; j--)
+	{
+		if (board[j][positioninCol] == playerNum)
+			counter++;
+		else
+			break;
+	}
+	for (int j = last_move; j < BOARD_SIZE_HORIZ; j++)
+	{
+		if (board[j][positioninCol] == playerNum)
+                        counter++;
+                else
+                        break;
+	}
+	if (counter >= 5) //Greater than or equal to 5 since last_move is counted twice
+		return playerNum;
+	else
+		counter = 0;
+
+	//Vertical matching block
+	for (int k = positioninCol; k < BOARD_SIZE_VERT; k++) //Only need to go down in position for the column
+	{
+		if (board[last_move][k] == playerNum)
+			counter++;
+		else
+			break;
+	}
+	if (counter >= 4)
+		return playerNum;
+	else 
+		counter = 0;
+
+	//Right Diagonal matching block
+	posColDia = positioninCol;
+	posRowDia = last_move;
+	while(indexisValid)
+	{
+		if (posColDia < BOARD_SIZE_VERT)
+			if (posRowDia < BOARD_SIZE_HORIZ)
+			{
+				if (board[posRowDia][posColDia] == playerNum)
+					counter++;
+				else
+					indexisValid = 0;
+				posColDia++;
+                                posRowDia++;
+			}
+			else
+				indexisValid = 0;
+		else
+			indexisValid = 0;
+	}
+	indexisValid = 1;
+	posColDia = positioninCol;
+        posRowDia = last_move;
+	while(indexisValid)
+        {
+                if (posColDia >= 0)
+                        if (posRowDia >= 0)
+                        {
+                                if (board[posRowDia][posColDia] == playerNum)
+                                        counter++;
+                                else
+                                        indexisValid = 0;
+                                posColDia--;
+                                posRowDia--;
+                        }
+                        else
+                                indexisValid = 0;
+                else
+                        indexisValid = 0;
+        }
+	//printf("This is counter for diagonal: %d\n", counter);
+	if (counter >= 5) //first entry counted twice again
+		return playerNum;
+
+	//Left Diagonal matching block
+	counter = 0;
+	indexisValid = 1;
+        posColDia = positioninCol;
+        posRowDia = last_move;
+	while(indexisValid)
+        {
+                if (posColDia >= 0)
+                        if (posRowDia < BOARD_SIZE_HORIZ)
+                        {
+                                if (board[posRowDia][posColDia] == playerNum)
+                                        counter++;
+                                else
+                                        indexisValid = 0;
+                                posColDia--;
+                                posRowDia++;
+                        }
+                        else
+                                indexisValid = 0;
+                else
+                        indexisValid = 0;
+        }
+	indexisValid = 1;
+        posColDia = positioninCol;
+        posRowDia = last_move;
+	while(indexisValid)
+        {
+                if (posColDia < BOARD_SIZE_VERT)
+                        if (posRowDia >= 0)
+                        {
+                                if (board[posRowDia][posColDia] == playerNum)
+                                        counter++;
+                                else
+                                        indexisValid = 0;
+                                posColDia++;
+                                posRowDia--;
+                        }
+                        else
+                                indexisValid = 0;
+                else
+                        indexisValid = 0;
+        }
+	if (counter >= 5) //first entry counted twice again
+                return playerNum;
+	else 
+		return 0;		
+}
+
+/******************************************************************************
+*                                                                             *
+*                       Function best_move()                                  *
+*                                                                             *
+*******************************************************************************
+*                                                                             *
+*  This is the EXTRA-CREDIT function to be used for the student competition.  *
+*                                                                             *
+******************************************************************************/
+int best_move(int board[][BOARD_SIZE_VERT], int computer_num)
+{
+	//Diagonals won't really be a tactic, too hard to use and even harder to carry count unless purposely trying for it
+	//Most people will try for columns and a few might try rows.
+	//My winning strategy: Place token in column 4, then 5 and then 3 or 6, doesn't matter
+	//If not blocked, auto-win (this is if I am going first)
+	//Going second, column stack in column 1 (if something placed in column 4).
+	//If nothing placed in column 4, place token there
+	
+	int lastMoveCol = -1, lastMoveRow = BOARD_SIZE_HORIZ, positionLeft = -1, positionRight = BOARD_SIZE_VERT + 1;
+	int opponent_num = (computer_num == 1 ? 2 : 1);
+	static int myLastMoveCol = 1, firstMove = 1, madeFirstMove = 1;
+	static int lastBoard[BOARD_SIZE_HORIZ][BOARD_SIZE_VERT] = {{0}};
+
+	//This block checks what move the opponent made in the previous move and records it into the static array stored
+	for (int i = BOARD_SIZE_VERT - 1; i >= 0; i--)
+                for (int j = 0; j < BOARD_SIZE_HORIZ; j++)
+		{
+			if (lastBoard[j][i] != board[j][i])
+			{
+				lastMoveCol = j;
+				lastMoveRow = i;
+				lastBoard[j][i] = board[j][i];
+				i = -1;
+				j = BOARD_SIZE_HORIZ;
+			}
+		}
+	display_board(lastBoard);	
+	switch (firstMove)
+	{
+		case 1:
+			firstMove++;
+			update_board(board, 4, computer_num);
+			if (lastMoveCol != -1)
+				madeFirstMove = 0;
+			for (int j = BOARD_SIZE_VERT - 1; j >= 0; j--)
+			{
+				if (lastBoard[3][j] == 0)
+				{
+					lastBoard[3][j] = computer_num;
+					break;
+				}
+			}
+			return 4;
+		case 2:
+			firstMove++;
+			if (lastMoveCol == 2)
+			{
+				myLastMoveCol = 5;
+				update_board(board, 5, computer_num);
+				for (int i = BOARD_SIZE_VERT - 1; i >= 0; i--)
+                        	{
+                                	if (lastBoard[4][i] == 0)
+                                	{
+                                	        lastBoard[4][i] = computer_num;
+                                	        break;
+                                	}
+                        	}
+
+				return 5; 
+			}
+			else
+			{
+				myLastMoveCol = 3;
+				update_board(board, 3, computer_num);
+				for (int i = BOARD_SIZE_VERT - 1; i >= 0; i--)
+                                {
+                                        if (lastBoard[2][i] == 0)
+                                        {
+                                                lastBoard[2][i] = computer_num;
+                                                break;
+                                        }
+                                }
+                                return 3;
+			}
+		case 3:
+			firstMove++;
+			if (madeFirstMove)
+			{
+				update_board(board, (myLastMoveCol*2)%8, computer_num);
+				for (int i = BOARD_SIZE_VERT - 1; i >= 0; i--)
+                                {
+                                        if (lastBoard[(myLastMoveCol*2)%8-1][i] == 0)
+                                        {
+                                                lastBoard[(myLastMoveCol*2)%8-1][i] = computer_num;
+                                                break;
+                                        }
+                                }
+                                return (myLastMoveCol*2)%8;
+			}
+			break;
+		case 4:
+			firstMove++;
+                        if (madeFirstMove)
+                        {
+				//printf("HRLLO: %d\n", 8-myLastMoveCol);
+                                update_board(board, 8-myLastMoveCol, computer_num);
+                                for (int i = BOARD_SIZE_VERT - 1; i >= 0; i--)
+                                {
+                                        if (lastBoard[7-myLastMoveCol][i] == 0)
+                                        {
+                                                lastBoard[7-myLastMoveCol][i] = computer_num;
+                                                break;
+                                        }
+                                }
+                                return 8-myLastMoveCol;
+                        }
+                        break;
+	}
+	if (chooseColumn(lastBoard, board, computer_num, computer_num) != -1)
+		return chooseColumn(lastBoard, board, computer_num, computer_num);
+	else if (chooseColumn(lastBoard, board, computer_num, opponent_num) != -1)
+		return chooseColumn(lastBoard, board, computer_num, opponent_num);
+	
+	while(is_column_full(board, myLastMoveCol))
+	{
+		myLastMoveCol++;
+		if (myLastMoveCol > 7)
+			myLastMoveCol = 1; 
+	}
+	update_board(board, myLastMoveCol, computer_num);
+	for (int i = BOARD_SIZE_HORIZ - 1; i >= 0; i--)
+        {
+                if (lastBoard[myLastMoveCol-1][i] == 0)
+                {
+                        lastBoard[myLastMoveCol-1][i] = computer_num;
+                        break;
+        	}
+        }
+	return myLastMoveCol;
+	
+}
+
+int chooseColumn(int board[][BOARD_SIZE_VERT], int actualBoard[][BOARD_SIZE_VERT], int player_num, int opponent_num)
+{
+	int m, columnFull, counter = 0, i = 0;
+	for (i = 1; i <= BOARD_SIZE_HORIZ; i++)
+	{
+		for (int k = BOARD_SIZE_VERT - 1; k >= 0; k--)
+        	{
+                	if (board[i-1][k] != 0)
+                        	counter++;
+        	        else
+			{
+				m = k;
+                	        break;
+			}
+	        }
+	        if (counter != BOARD_SIZE_VERT)
+	                columnFull = 0;
+	        else
+	                columnFull = 1;
+		printf("Does this rerun?\n");
+		if (columnFull == 0)
+		{
+              		board[i-1][m] = opponent_num;
+			display_board(board);
+			int positioninCol = m, playerNum = opponent_num, indexisValid = 1, posColDia, posRowDia, last_move = i-1, check_winner = 0;
+			counter = 0;
+		        //Horizontal matching block
+		        for (int j = last_move; j >= 0; j--)
+		        {
+		                if (board[j][positioninCol] == playerNum)
+		                        counter++;
+        		        else
+                		        break;
+		        }
+		        for (int j = last_move; j < BOARD_SIZE_HORIZ; j++)
+		        {
+        		        if (board[j][positioninCol] == playerNum)
+                		        counter++;
+               			else
+        		                break;
+        		}
+			printf("This is the counter: %d \n", counter);
+        		if (counter >= 5) //Greater than or equal to 5 since last_move is counted twice
+				check_winner = 1;
+		        else
+		                counter = 0;
+		
+		        //Vertical matching block
+		        for (int k = positioninCol; k < BOARD_SIZE_VERT; k++) //Only need to go down in position for the column
+		        {
+        		        if (board[last_move][k] == playerNum)
+       		 	               	counter++;
+                		else
+                        		break;
+        		}
+        		if (counter >= 4)
+			{
+				check_winner = 1;
+				printf("HERE\n");
+			}
+        		else
+                		counter = 0;
+
+        		//Right Diagonal matching block
+        		posColDia = positioninCol;
+        		posRowDia = last_move;
+        		while(indexisValid)
+        		{
+                		if (posColDia < BOARD_SIZE_VERT)
+                        		if (posRowDia < BOARD_SIZE_HORIZ)
+                        		{
+                                		if (board[posRowDia][posColDia] == playerNum)
+                                		        counter++;
+                                		else
+                                		        indexisValid = 0;
+                                		posColDia++;
+                                		posRowDia++;
+                        		}
+                        		else
+                                		indexisValid = 0;
+                		else
+                        		indexisValid = 0;
+        		}
+
+		        indexisValid = 1;
+        		posColDia = positioninCol;
+        		posRowDia = last_move;
+        		while(indexisValid)
+        		{
+                		if (posColDia >= 0)
+                        		if (posRowDia >= 0)
+                        		{
+                        		        if (board[posRowDia][posColDia] == playerNum)
+                        		                counter++;
+                        		        else
+                        		                indexisValid = 0;
+                        		        posColDia--;
+                                		posRowDia--;
+                        		}
+                        		else
+                        		        indexisValid = 0;
+                		else
+                        		indexisValid = 0;
+        		}
+		        if (counter >= 5) //first entry counted twice again
+        			check_winner = 1;
+
+        		//Left Diagonal matching block
+        		counter = 0;
+        		indexisValid = 1;
+        		posColDia = positioninCol;
+        		posRowDia = last_move;
+        		while(indexisValid)
+        		{
+        		        if (posColDia >= 0)
+        		                if (posRowDia < BOARD_SIZE_HORIZ)
+        		                {
+        		                        if (board[posRowDia][posColDia] == playerNum)
+                		                        counter++;
+                		                else
+                		                        indexisValid = 0;
+                		                posColDia--;
+                		                posRowDia++;
+                		        }
+                		        else
+                        		        indexisValid = 0;
+                	else
+                	        indexisValid = 0;
+        		}
+        		indexisValid = 1;
+        		posColDia = positioninCol;
+        		posRowDia = last_move;
+        		while(indexisValid)
+        		{
+                		if (posColDia < BOARD_SIZE_VERT)
+                        		if (posRowDia >= 0)
+                        		{
+                                		if (board[posRowDia][posColDia] == playerNum)
+                                		        counter++;
+                                		else
+                                		        indexisValid = 0;
+                                		posColDia++;
+                                		posRowDia--;
+                        		}
+                        		else
+                        		        indexisValid = 0;
+                		else
+                        		indexisValid = 0;
+        		}
+        		if (counter >= 5) //first entry counted twice again
+                		check_winner = 1;
+			if (check_winner == 1)
+			{
+				columnFull = 1;
+				printf("WORKING");
+				return i;
+			}
+			else
+				board[i-1][m] = 0;
+		}
+	}
+	return -1;
+}
+
+//int blockingDoubles(int lastBoard[][BOARD_SIZE_VERT], int opponent_num, int lastMoveCol, int lastMoveRow)
+//{
+//	int i, j;
+//	//Horizontal double check
+//	for (i = lastMoveCol; i >= 0; i--)
+//		if (lastBoard[i]
+//}
+/*=============================================================================
+  Function definitions of other functions
+=============================================================================*/
+
+// If you would like to use functions other than those declared in
+// connect4_functions.h and implemented above, put the definitions
+// of
